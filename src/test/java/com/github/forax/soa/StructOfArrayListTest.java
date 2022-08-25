@@ -83,43 +83,9 @@ public class StructOfArrayListTest {
   }
 
   @Test
-  public void addIndexAndGet() {
+  public void addIndexNotSupported() {
     var soaList = StructOfArrayList.of(Person.class);
-    soaList.add(new Person(36, "Ana"));
-    soaList.add(0, new Person(18, "Bob"));
-    assertAll(
-        () -> assertEquals(18, soaList.get(0).age()),
-        () -> assertEquals("Bob", soaList.get(0).name()),
-        () -> assertEquals(36, soaList.get(1).age()),
-        () -> assertEquals("Ana", soaList.get(1).name()),
-        () -> assertEquals(List.of(
-            new Person(18, "Bob"),
-            new Person(36, "Ana")
-            ), soaList),
-        () -> assertThrows(IndexOutOfBoundsException.class, () -> soaList.get(-1)),
-        () -> assertThrows(IndexOutOfBoundsException.class, () -> soaList.get(2)),
-        () -> assertThrows(IndexOutOfBoundsException.class, () -> soaList.add(-1, new Person(77, "Zip"))),
-        () -> assertThrows(IndexOutOfBoundsException.class, () -> soaList.add(3, new Person(77, "Zip"))),
-        () -> assertThrows(NullPointerException.class, () -> soaList.add(0, null))
-    );
-  }
-
-  @Test
-  public void addIndexLast() {
-    var soaList = StructOfArrayList.of(Person.class);
-    soaList.add(new Person(36, "Ana"));
-    soaList.add(1, new Person(18, "Bob"));
-    assertAll(
-        () -> assertEquals(36, soaList.get(0).age()),
-        () -> assertEquals("Ana", soaList.get(0).name()),
-        () -> assertEquals(18, soaList.get(1).age()),
-        () -> assertEquals("Bob", soaList.get(1).name()),
-        () -> assertEquals(List.of(
-            new Person(36, "Ana"),
-            new Person(18, "Bob")), soaList),
-        () -> assertThrows(IndexOutOfBoundsException.class, () -> soaList.get(-1)),
-        () -> assertThrows(IndexOutOfBoundsException.class, () -> soaList.get(2))
-    );
+    assertThrows(UnsupportedOperationException.class, () -> soaList.add(0, new Person(18, "Bob")));
   }
 
   @Test
@@ -173,25 +139,9 @@ public class StructOfArrayListTest {
   }
 
   @Test
-  public void addIndexResizeAndLoop() {
-    var soaList = StructOfArrayList.of(Person.class);
-    IntStream.range(0, 1_000)
-        .forEach(i ->soaList.add(0, new Person(i, "" + i)));
-    var index = 999;
-    for(var person: soaList) {
-      assertEquals(index, person.age());
-      assertEquals("" + index, person.name());
-      index--;
-    }
-  }
-
-  @Test
   public void addNull() {
     var soaList = StructOfArrayList.of(Person.class);
-    assertAll(
-        () -> assertThrows(NullPointerException.class, () -> soaList.add(null)),
-        () -> assertThrows(NullPointerException.class, () -> soaList.add(0, null))
-    );
+    assertThrows(NullPointerException.class, () -> soaList.add(null));
   }
 
   @Test
@@ -295,7 +245,7 @@ public class StructOfArrayListTest {
     soaList.add(new Person(77, "Elo"));
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(18, "Bob"));
-    var removed = soaList.removeBySwappingLast(0);
+    var removed = soaList.remove(0);
     assertAll(
         () -> assertEquals(2, soaList.size()),
         () -> assertEquals(77, removed.age()),
@@ -317,7 +267,7 @@ public class StructOfArrayListTest {
   public void removeBySwappingLastOnlyOneElement() {
     var soaList = StructOfArrayList.of(Person.class);
     soaList.add(new Person(77, "Elo"));
-    var removed = soaList.removeBySwappingLast(0);
+    var removed = soaList.remove(0);
     assertAll(
         () -> assertEquals(0, soaList.size()),
         () -> assertEquals(77, removed.age()),
@@ -530,15 +480,6 @@ public class StructOfArrayListTest {
   }
 
   @Test
-  public void iteratorAddIndexFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
-    soaList.add(new Person(36, "Ana"));
-    var iterator = soaList.iterator();
-    soaList.add(0, new Person(77, "Elo"));
-    assertThrows(ConcurrentModificationException.class, iterator::next);
-  }
-
-  @Test
   public void iteratorRemoveFailFast() {
     var soaList = StructOfArrayList.of(Person.class);
     soaList.add(new Person(36, "Ana"));
@@ -592,15 +533,6 @@ public class StructOfArrayListTest {
   }
 
   @Test
-  public void listIteratorAddIndexFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
-    soaList.add(new Person(36, "Ana"));
-    var iterator = soaList.listIterator();
-    soaList.add(0, new Person(77, "Elo"));
-    assertThrows(ConcurrentModificationException.class, iterator::next);
-  }
-
-  @Test
   public void listIteratorRemoveFailFast() {
     var soaList = StructOfArrayList.of(Person.class);
     soaList.add(new Person(36, "Ana"));
@@ -624,15 +556,6 @@ public class StructOfArrayListTest {
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.listIterator(1);
     soaList.add(new Person(77, "Elo"));
-    assertThrows(ConcurrentModificationException.class, iterator::previous);
-  }
-
-  @Test
-  public void listIteratorPreviousAddIndexFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
-    soaList.add(new Person(36, "Ana"));
-    var iterator = soaList.listIterator(1);
-    soaList.add(0, new Person(77, "Elo"));
     assertThrows(ConcurrentModificationException.class, iterator::previous);
   }
 

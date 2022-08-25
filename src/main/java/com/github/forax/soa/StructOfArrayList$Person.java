@@ -45,21 +45,7 @@ public final class StructOfArrayList$Person extends StructOfArrayList<Person> {
 
   @Override
   public void add(int index, Person element) {
-    if (unmodifiable) {
-      throw new UnsupportedOperationException();
-    }
-    if (index < 0 || index > size) {
-      throw new IndexOutOfBoundsException(index);
-    }
-    Objects.requireNonNull(element);
-    if (size == array0.length) {
-      resize();
-    }
-    System.arraycopy(array0, index, array0, index + 1, size - index);
-    System.arraycopy(array1, index, array1, index + 1, size - index);
-    valueAt(index, element);
-    size++;
-    modCount++;
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -80,25 +66,7 @@ public final class StructOfArrayList$Person extends StructOfArrayList<Person> {
     return true;
   }
 
-  @Override
   public Person remove(int index) {
-    if (unmodifiable) {
-      throw new UnsupportedOperationException();
-    }
-    Objects.checkIndex(index, size);
-    var old = valueAt(index);
-    System.arraycopy(array0, index + 1, array0, index, size - index - 1);
-    System.arraycopy(array1, index +1, array1, index, size - index - 1);
-    var last = size - 1;
-    //array0[size] = 0;
-    array1[size] = null;
-    size = last;
-    modCount++;
-    return old;
-  }
-
-  @Override
-  public Person removeBySwappingLast(int index) {  // FIXME
     if (unmodifiable) {
       throw new UnsupportedOperationException();
     }

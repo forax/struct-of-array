@@ -26,13 +26,6 @@ public abstract class StructOfArrayList<T> extends AbstractList<T> {
     return size == 0;
   }
 
-  /**
-   * remove the element at index {@code index} by replacing it with the last element.
-   * @param index the index of the element to remove
-   * @return the removed element
-   */
-  public abstract T removeBySwappingLast(int index);
-
   abstract T valueAt(int index);
   abstract void valueAt(int index, T element);
 

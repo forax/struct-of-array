@@ -30,6 +30,44 @@ public abstract class StructOfArrayList<T> extends AbstractList<T> {
   abstract void valueAt(int index, T element);
 
   @Override
+  public final T get(int index) {
+    Objects.checkIndex(index, size);
+    return valueAt(index);
+  }
+
+  @Override
+  public final T set(int index, T element) {
+    Objects.checkIndex(index, size);
+    Objects.requireNonNull(element);
+    var old = valueAt(index);
+    valueAt(index, element);
+    return old;
+  }
+
+  @Override
+  public final void add(int index, T element) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public final boolean contains(Object o) {
+    return indexOf(o) != -1;
+  }
+
+  @Override
+  public final boolean remove(Object o) {
+    if (unmodifiable) {
+      throw new UnsupportedOperationException();
+    }
+    var index = indexOf(o);
+    if (index == -1) {
+      return false;
+    }
+    remove(index);
+    return true;
+  }
+
+  @Override
   public final Iterator<T> iterator() {
     var currentCount = modCount;
     return new Iterator<T>() {
@@ -153,6 +191,6 @@ public abstract class StructOfArrayList<T> extends AbstractList<T> {
     if (recordType != Person.class) {
       throw new UnsupportedOperationException("NYI");
     }
-    return (StructOfArrayList<T>)(StructOfArrayList<?>) new StructOfArrayList$Person(capacity, false);
+    return (StructOfArrayList<T>)(StructOfArrayList<?>) new StructOfArrayList$Template(capacity, false);
   }
 }

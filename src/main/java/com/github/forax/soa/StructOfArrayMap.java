@@ -83,6 +83,98 @@ public abstract class StructOfArrayMap<T extends Record> extends AbstractMap<Int
     }
   }
 
+  @Override
+  public final T get(Object key) {
+    return getOrDefault(key, null);
+  }
+
+  @Override
+  public final T getOrDefault(Object key, T defaultValue) {
+    Objects.requireNonNull(key);
+    if (!(key instanceof Integer value)) {
+      return defaultValue;
+    }
+    var k = (int) value;
+    var slot = k & (indexes.length - 1);
+    for(;;) {
+      var index = indexes[slot];
+      if (index == EMPTY) {
+        return defaultValue;
+      }
+      if (index != TOMBSTONE && keys[index] == k) {
+        return valueAt(index);
+      }
+      slot = (slot + 1) & (indexes.length - 1);
+    }
+  }
+
+  abstract void resize();
+
+  @Override
+  public final T put(Integer key, T value) {
+    Objects.requireNonNull(key);
+    Objects.requireNonNull(value);
+    var k = (int) key;
+    var indexes = this.indexes;
+    var slot = k & (indexes.length - 1);
+    for(;;) {
+      var index = indexes[slot];
+      if (index < 0) {  // EMPTY or TOMBSTONE
+        if (size == keys.length) {
+          resize();
+          indexes = this.indexes;
+          slot = k & (indexes.length - 1);
+          continue;
+        }
+        var newIndex = size++;
+        indexes[slot] = newIndex;
+        keys[newIndex] = k;
+        valueAt(newIndex, value);
+        modCount++;
+        return null;
+      }
+      if (keys[index] == k) {
+        var old = valueAt(index);
+        valueAt(index, value);
+        return old;
+      }
+      slot = (slot + 1) & (indexes.length - 1);
+    }
+  }
+
+  final void replaceLastKeyIndex(int k, int lastIndex, int newIndex) {
+    var slot = k & (indexes.length - 1);
+    for(;;) {
+      var index = indexes[slot];
+      assert index != EMPTY;
+      if (index != TOMBSTONE && index == lastIndex) {
+        indexes[slot] = newIndex;
+        return;
+      }
+      slot = (slot + 1) & (indexes.length - 1);
+    }
+  }
+
+  @Override
+  public final T replace(Integer key, T value) {
+    Objects.requireNonNull(key);
+    Objects.requireNonNull(value);
+    var k = (int) key;
+    var slot = k & (indexes.length - 1);
+    for(;;) {
+      var index = indexes[slot];
+      if (index == EMPTY) {
+        return null;
+      }
+      if (index != TOMBSTONE && keys[index] == k) {
+        var old = valueAt(index);
+        valueAt(index, value);
+        return old;
+      }
+      slot = (slot + 1) & (indexes.length - 1);
+    }
+  }
+
   abstract T valueAt(int index);
   abstract void valueAt(int index, T element);
 
@@ -239,6 +331,6 @@ public abstract class StructOfArrayMap<T extends Record> extends AbstractMap<Int
       throw new UnsupportedOperationException("NYI");
     }
     var powerOf2 = Math.max(16, (capacity & (capacity - 1)) == 0? capacity: Integer.highestOneBit(capacity) << 1);
-    return (StructOfArrayMap<T>)(StructOfArrayMap<?>) new StructOfArrayMap$Person(powerOf2);
+    return (StructOfArrayMap<T>)(StructOfArrayMap<?>) new StructOfArrayMap$Template(powerOf2);
   }
 }

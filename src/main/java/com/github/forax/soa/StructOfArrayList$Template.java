@@ -36,6 +36,20 @@ public final class StructOfArrayList$Template extends StructOfArrayList {
     Snippets.end();
   }
 
+  private void copyElement(int to, int from) {
+    Snippets.start();
+    array0[to] = array0[from];
+    array1[to] = array1[from];
+    Snippets.end();
+  }
+
+  private void zeroElement(int index) {
+    Snippets.start();
+    //array0[index] = 0;
+    array1[index] = null;
+    Snippets.end();
+  }
+
   public Object remove(int index) {
     if (unmodifiable) {
       throw new UnsupportedOperationException();
@@ -43,14 +57,8 @@ public final class StructOfArrayList$Template extends StructOfArrayList {
     Objects.checkIndex(index, size);
     var old = valueAt(index);
     var last = size - 1;
-    Snippets.start();
-    array0[index] = array0[last];
-    array1[index] = array1[last];
-    Snippets.end();
-    Snippets.start();
-    //array0[last] = 0;
-    array1[last] = null;
-    Snippets.end();
+    copyElement(index, last);
+    zeroElement(last);
     size = last;
     modCount++;
     return old;
@@ -98,13 +106,17 @@ public final class StructOfArrayList$Template extends StructOfArrayList {
     return -1;
   }
 
-  private void resize() {
-    var size = this.size;
-    var newLength = (size == 0)? 16: (int) (size * 1.5);
+  private void copyAll(int newLength) {
     Snippets.start();
     array0 = Arrays.copyOf(array0, newLength);
     array1 = Arrays.copyOf(array1, newLength);
     Snippets.end();
+  }
+
+  private void resize() {
+    var size = this.size;
+    var newLength = (size == 0)? 16: (int) (size * 1.5);
+    copyAll(newLength);
   }
 
   @Override

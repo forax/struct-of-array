@@ -16,40 +16,59 @@ import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.util.CheckClassAdapter;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.RecordComponent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.joining;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ASM9;
-import static org.objectweb.asm.Opcodes.CHECKCAST;
-import static org.objectweb.asm.Opcodes.INSTANCEOF;
 
 class TemplateGenerator {
   public static void main(String[] args) throws IOException {
-    var generator = TemplateGenerator.specialized(Person.class);
-    var bytecode = generator.generate(StructOfArrayList$Template.class);
+    var generator = TemplateGenerator.specialized(StructOfArrayList$Template.class, Person.class);
+    //var generator = TemplateGenerator.specialized(StructOfArrayMap$Template.class, Person.class);
+    var bytecode = generator.generate();
     Files.write(Path.of(generator.specializedClassName.replace('/', '_')+".class"), bytecode);
   }
 
-  public static TemplateGenerator specialized(Class<?> recordType) {
+  private static byte[] templateBytecode(Class<?> template) {
+    var name = "/" + template.getName().replace('.', '/') + ".class";
+    byte[] data;
+    try(var input = template.getResourceAsStream(name)) {
+      if (input == null) {
+        throw new LinkageError("can not resource " + name);
+      }
+      return input.readAllBytes();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  public static TemplateGenerator specialized(Class<?> template, Class<?> recordType) {
+    Objects.requireNonNull(template, "template is null");
+    Objects.requireNonNull(recordType, "record type is null");
     if (!recordType.isRecord()) {
       throw new IllegalArgumentException(recordType.getName() + " not a record");
     }
-    var components = Arrays.stream(recordType.getRecordComponents()).toList();
+    var templateBytecode = templateBytecode(template);
     var recordMangledName = recordType.getName().replace('.', '_');
-    var specializedClassName = StructOfArrayList.class.getName().replace('.', '/') + '$' + recordMangledName;
-    return new TemplateGenerator(specializedClassName, recordType, components);
+    var specializedClassName = template.getName().replace('.', '/') + '$' + recordMangledName;
+    var components = Arrays.stream(recordType.getRecordComponents()).toList();
+    return new TemplateGenerator(templateBytecode, specializedClassName, recordType, components);
   }
 
+  private final byte[] templateBytecode;
   private final String specializedClassName;
   private final Class<?> recordType;
   private final List<RecordComponent> components;
 
-  private TemplateGenerator(String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
+  private TemplateGenerator(byte[] templateBytecode, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
+    this.templateBytecode = templateBytecode;
     this.specializedClassName = specializedClassName;
     this.recordType = recordType;
     this.components = components;
@@ -70,11 +89,11 @@ class TemplateGenerator {
       case "com/github/forax/soa/StructOfArrayList$Template.valueAt(ILjava/lang/Object;)V0" -> {
         Templates.templateListSetValue(mv, specializedClassName, recordType, components);
       }
-      case "com/github/forax/soa/StructOfArrayList$Template.remove(I)Ljava/lang/Object;0" -> {
-        Templates.templateListRemoveTransfer(mv, specializedClassName, components);
+      case "com/github/forax/soa/StructOfArrayList$Template.copyElement(II)V0" -> {
+        Templates.templateListCopyElement(mv, specializedClassName, components);
       }
-      case "com/github/forax/soa/StructOfArrayList$Template.remove(I)Ljava/lang/Object;1" -> {
-        Templates.templateListRemoveZero(mv, specializedClassName, components);
+      case "com/github/forax/soa/StructOfArrayList$Template.zeroElement(I)V0" -> {
+        Templates.templateListZeroElement(mv, specializedClassName, components);
       }
       case "com/github/forax/soa/StructOfArrayList$Template.indexOf(Ljava/lang/Object;)I0",
            "com/github/forax/soa/StructOfArrayList$Template.lastIndexOf(Ljava/lang/Object;)I0" -> {
@@ -84,8 +103,8 @@ class TemplateGenerator {
            "com/github/forax/soa/StructOfArrayList$Template.lastIndexOf(Ljava/lang/Object;)I1" -> {
         Templates.templateListIndexOfEquals(mv, specializedClassName, recordType, components);
       }
-      case "com/github/forax/soa/StructOfArrayList$Template.resize()V0" -> {
-        Templates.templateListCopyOf(mv, specializedClassName, components);
+      case "com/github/forax/soa/StructOfArrayList$Template.copyAll(I)V0" -> {
+        Templates.templateListCopyAll(mv, specializedClassName, components);
       }
       case "com/github/forax/soa/StructOfArrayList$Template.add(Ljava/lang/Object;)Z0" -> {
         Templates.templateListAddResize(mv, specializedClassName, components);
@@ -97,19 +116,8 @@ class TemplateGenerator {
     }
   }
 
-  public byte[] generate(Class<?> template) {
-    var name = "/" + template.getName().replace('.', '/') + ".class";
-    byte[] data;
-    try(var input = template.getResourceAsStream(name)) {
-      if (input == null) {
-        throw new LinkageError("can not resource " + name);
-      }
-      data = input.readAllBytes();
-    } catch (IOException e) {
-      throw new AssertionError(e);
-    }
-
-    var reader = new ClassReader(data);
+  public byte[] generate() {
+    var reader = new ClassReader(templateBytecode);
     var writer = new ClassWriter(reader, ClassWriter.COMPUTE_FRAMES);
     var checker = new CheckClassAdapter(writer, true);
     var renamer = new ClassRemapper(checker, new Remapper() {

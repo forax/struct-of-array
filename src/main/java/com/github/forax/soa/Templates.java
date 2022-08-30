@@ -165,24 +165,24 @@ class Templates {
     }
   }
 
-  static void templateListRemoveTransfer(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
-    // 40: aload_0
-    // 41: getfield      #7                  // Field array0:[I
-    // 44: iload_1
-    // 45: aload_0
-    // 46: getfield      #7                  // Field array0:[I
-    // 49: iload_3
-    // 50: iaload
-    // 51: iastore
+  static void templateListCopyElement(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
+    //  3: aload_0
+    //  4: getfield      #7                  // Field array0:[I
+    //  7: iload_1
+    //  8: aload_0
+    //  9: getfield      #7                  // Field array0:[I
+    // 12: iload_2
+    // 13: iaload
+    // 14: iastore
 
-    // 52: aload_0
-    // 53: getfield      #13                 // Field array1:[Ljava/lang/String;
-    // 56: iload_1
-    // 57: aload_0
-    // 58: getfield      #13                 // Field array1:[Ljava/lang/String;
-    // 61: iload_3
-    // 62: aaload
-    // 63: aastore
+    // 15: aload_0
+    // 16: getfield      #13                 // Field array1:[Ljava/lang/String;
+    // 19: iload_1
+    // 20: aload_0
+    // 21: getfield      #13                 // Field array1:[Ljava/lang/String;
+    // 24: iload_2
+    // 25: aaload
+    // 26: aastore
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
@@ -192,18 +192,18 @@ class Templates {
       mv.visitVarInsn(ILOAD, 1);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
-      mv.visitVarInsn(ILOAD, 3);
+      mv.visitVarInsn(ILOAD, 2);
       mv.visitInsn(Type.getType(componentType).getOpcode(IALOAD));
       mv.visitInsn(Type.getType(componentType).getOpcode(IASTORE));
     }
   }
 
-  static void templateListRemoveZero(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
-    // 70: aload_0
-    // 71: getfield      #13                 // Field array1:[Ljava/lang/String;
-    // 74: iload_3
-    // 75: aconst_null
-    // 76: aastore
+  static void templateListZeroElement(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
+    //  3: aload_0
+    //  4: getfield      #13                 // Field array1:[Ljava/lang/String;
+    //  7: iload_1
+    //  8: aconst_null
+    //  9: aastore
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
@@ -213,7 +213,7 @@ class Templates {
       }
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
-      mv.visitVarInsn(ILOAD, 3);
+      mv.visitVarInsn(ILOAD, 1);
       mv.visitInsn(ACONST_NULL);
       mv.visitInsn(AASTORE);
     }
@@ -288,22 +288,21 @@ class Templates {
     mv.visitLabel(endLabel);
   }
 
-  static void templateListCopyOf(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
-    // 25: aload_0
-    // 26: aload_0
-    // 27: getfield      #7                  // Field array0:[I
-    // 30: iload_2
-    // 31: invokestatic  #79                 // Method java/util/Arrays.copyOf:([II)[I
-    // 34: putfield      #7                  // Field array0:[I
+  static void templateListCopyAll(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
+    //  3: aload_0
+    //  4: aload_0
+    //  5: getfield      #7                  // Field array0:[I
+    //  8: iload_1
+    //  9: invokestatic  #85                 // Method java/util/Arrays.copyOf:([II)[I
+    // 12: putfield      #7                  // Field array0:[I
 
-    // 37: aload_0
-    // 38: aload_0
-    // 39: getfield      #13                 // Field array1:[Ljava/lang/String;
-    // 42: iload_2
-    // 43: invokestatic  #85                 // Method java/util/Arrays.copyOf:([Ljava/lang/Object;I)[Ljava/lang/Object;
-    // 46: checkcast     #88                 // class "[Ljava/lang/String;"
-    // 49: putfield      #13                 // Field array1:[Ljava/lang/String;
-
+    // 15: aload_0
+    // 16: aload_0
+    // 17: getfield      #13                 // Field array1:[Ljava/lang/String;
+    // 20: iload_1
+    // 21: invokestatic  #91                 // Method java/util/Arrays.copyOf:([Ljava/lang/Object;I)[Ljava/lang/Object;
+    // 24: checkcast     #94                 // class "[Ljava/lang/String;"
+    // 27: putfield      #13                 // Field array1:[Ljava/lang/String;
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
@@ -311,7 +310,7 @@ class Templates {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
-      mv.visitVarInsn(ILOAD, 2);
+      mv.visitVarInsn(ILOAD, 1);
       var erasedArrayType = componentType.isPrimitive()? componentType.arrayType(): Object[].class;
       mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "copyOf",
           "(" + erasedArrayType.descriptorString() + "I)" + erasedArrayType.descriptorString(),

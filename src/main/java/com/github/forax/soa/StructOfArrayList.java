@@ -207,8 +207,8 @@ public abstract class StructOfArrayList<T> extends AbstractList<T> {
   private static final ClassValue<MethodHandle> SPECIALIZED = new ClassValue<>() {
     @Override
     protected MethodHandle computeValue(Class<?> type) {
-      var generator = TemplateGenerator.specialized(type);
-      var bytecode = generator.generate(StructOfArrayList$Template.class);
+      var generator = TemplateGenerator.specialized(StructOfArrayList$Template.class, type);
+      var bytecode = generator.generate();
       var lookup = MethodHandles.lookup();
       try {
         var specializedClass = lookup.defineClass(bytecode);

@@ -38,9 +38,12 @@ public final class StructOfArrayMap$Template extends StructOfArrayMap {
     if (!(value instanceof Person element)) {
       return false;
     }
+    int i;  // must be declared before the snippet
+    Snippets.start();
     var v0 = element.age();
     var v1 = element.name();
-    for(var i = 0; i < size; i++) {
+    Snippets.end();
+    for(i = 0; i < size; i++) {
       Snippets.start();
       if (array0[i] == v0 && Objects.equals(array1[i], v1)) {
         return true;

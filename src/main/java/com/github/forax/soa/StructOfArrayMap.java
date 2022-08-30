@@ -12,7 +12,7 @@ import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-public abstract class StructOfArrayMap<T extends Record> extends AbstractMap<Integer, T> {
+public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
   static final int EMPTY = -1;
   static final int TOMBSTONE = -2;
 

@@ -1,5 +1,9 @@
 package com.github.forax.soa;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
 import java.util.AbstractList;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
@@ -7,6 +11,8 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+
+import static java.lang.invoke.MethodType.methodType;
 
 public abstract class StructOfArrayList<T> extends AbstractList<T> {
   int size;
@@ -188,9 +194,29 @@ public abstract class StructOfArrayList<T> extends AbstractList<T> {
     if (capacity < 0) {
       throw new IllegalArgumentException("capacity < 0");
     }
-    if (recordType != Person.class) {
-      throw new UnsupportedOperationException("NYI");
+    var constructor = SPECIALIZED.get(recordType);
+    try {
+      return (StructOfArrayList<T>)constructor.invokeExact(capacity, false);
+    } catch (RuntimeException | Error e) {
+      throw e;
+    } catch (Throwable t) {
+      throw (LinkageError) new LinkageError().initCause(t);
     }
-    return (StructOfArrayList<T>)(StructOfArrayList<?>) new StructOfArrayList$Template(capacity, false);
   }
+
+  private static final ClassValue<MethodHandle> SPECIALIZED = new ClassValue<>() {
+    @Override
+    protected MethodHandle computeValue(Class<?> type) {
+      var generator = TemplateGenerator.specialized(type);
+      var bytecode = generator.generate(StructOfArrayList$Template.class);
+      var lookup = MethodHandles.lookup();
+      try {
+        var specializedClass = lookup.defineClass(bytecode);
+        var constructor = lookup.findConstructor(specializedClass, methodType(void.class, int.class, boolean.class));
+        return constructor.asType(methodType(StructOfArrayList.class, int.class, boolean.class));
+      } catch (IllegalAccessException | NoSuchMethodException e) {
+        throw (LinkageError) new LinkageError().initCause(e);
+      }
+    }
+  };
 }

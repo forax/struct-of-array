@@ -13,6 +13,8 @@ import java.util.stream.Stream;
 import static java.lang.invoke.MethodType.methodType;
 
 final class RT {
+  private RT() {}
+
   private static MethodHandle constructor(Class<?> specializedClass, MethodType methodType, Class<?> baseClass) {
     try {
       var constructor = LOOKUP.findConstructor(specializedClass, methodType);

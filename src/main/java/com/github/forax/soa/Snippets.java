@@ -1,6 +1,8 @@
 package com.github.forax.soa;
 
-class Snippets {
+final class Snippets {
+  private Snippets() {}
+
   public static void start() {}
   public static void end() {}
 }

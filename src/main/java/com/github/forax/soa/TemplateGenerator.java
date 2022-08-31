@@ -29,7 +29,7 @@ import static org.objectweb.asm.Opcodes.ASM9;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.INSTANCEOF;
 
-class TemplateGenerator {
+final class TemplateGenerator {
   public static void main(String[] args) throws IOException {
     //var generator = TemplateGenerator.specialized(StructOfArrayList$Template.class, Person.class);
     var generator = TemplateGenerator.specialized(StructOfArrayMap$Template.class, Person.class);
@@ -141,6 +141,7 @@ class TemplateGenerator {
       @Override
       public String mapType(String internalName) {
         assert !internalName.equals("com/github/forax/soa/Person"): "Person should never leak";
+        assert !internalName.equals("com/github/forax/soa/Snippets"): "Snippets should never leak";
 
         if (internalName.endsWith("$Template")) {
           return specializedClassName;

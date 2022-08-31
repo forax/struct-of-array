@@ -13,7 +13,9 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.joining;
 import static org.objectweb.asm.Opcodes.*;
 
-class Templates {
+final class Templates {
+  private Templates() {}
+
   private static String arrayDescriptor(Class<?> componentType) {
     return '[' + componentType.descriptorString();
   }
@@ -431,7 +433,7 @@ class Templates {
       "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
       false);
 
-  static final Handle BSM_RECORD_ACCESS = new Handle(H_INVOKESTATIC, "com/github/forax/soa/RT", "bsm_record_access",
+  private static final Handle BSM_RECORD_ACCESS = new Handle(H_INVOKESTATIC, "com/github/forax/soa/RT", "bsm_record_access",
       "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
       false);
 

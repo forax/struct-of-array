@@ -27,7 +27,7 @@ And a similar example using `StructOfArrayMap`
 
 
 ### How to build ?
-Just use Maven
+Just use Maven with Java 11+
 ```bash
   mvn package
 ```

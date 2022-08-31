@@ -53,7 +53,7 @@ public class StructOfArrayListTest2 {
 
   public record RecordWithDoubleAndFloat(double d, float f) { }
 
-  //@Test  // FIXME
+  @Test
   public void withDoubleAndFloat() {
     var soaList = StructOfArrayList.of(lookup(), RecordWithDoubleAndFloat.class);
     soaList.add(new RecordWithDoubleAndFloat(2.0, 1f));
@@ -65,6 +65,23 @@ public class StructOfArrayListTest2 {
         () -> assertEquals(0, soaList.indexOf(new RecordWithDoubleAndFloat(2.0, 1f))),
         () -> assertEquals(1, soaList.lastIndexOf(new RecordWithDoubleAndFloat(4.0, 2f))),
         () -> assertTrue(soaList.contains(new RecordWithDoubleAndFloat(4.0, 2f)))
+    );
+  }
+
+  public record LongPoint(long x, long y) {}
+
+  @Test
+  public void longPointAdd() {
+    var soaList = StructOfArrayList.of(lookup(), LongPoint.class);
+    soaList.add(new LongPoint(1, 3));
+    soaList.add(new LongPoint(14, 51));
+    assertAll(
+        () -> assertEquals(2, soaList.size()),
+        () -> assertEquals(new LongPoint(1, 3), soaList.get(0)),
+        () -> assertEquals(new LongPoint(14, 51), soaList.get(1)),
+        () -> assertEquals(0, soaList.indexOf(new LongPoint(1, 3))),
+        () -> assertEquals(1, soaList.lastIndexOf(new LongPoint(14, 51))),
+        () -> assertTrue(soaList.contains(new LongPoint(14, 51)))
     );
   }
 }

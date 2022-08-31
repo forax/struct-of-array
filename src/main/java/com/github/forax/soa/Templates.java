@@ -273,9 +273,19 @@ final class Templates {
       mv.visitVarInsn(Type.getType(componentType).getOpcode(ILOAD), slot);
       slot += (componentType == long.class || componentType == double.class)? 2: 1;
       switch (componentType.descriptorString()) {
-        case "Z", "B", "C", "S", "I", "J" -> mv.visitJumpInsn(IF_ICMPNE, endLabel);
-        case "F" -> throw new AssertionError("FIXME");  // FIXME
-        case "D" -> throw new AssertionError("FIXME");  // FIXME
+        case "Z", "B", "C", "S", "I" -> mv.visitJumpInsn(IF_ICMPNE, endLabel);
+        case "J" -> {
+          mv.visitInsn(LCMP);
+          mv.visitJumpInsn(IFNE, endLabel);
+        }
+        case "F" -> {
+          mv.visitInsn(FCMPL);
+          mv.visitJumpInsn(IFNE, endLabel);
+        }
+        case "D" -> {
+          mv.visitInsn(DCMPL);
+          mv.visitJumpInsn(IFNE, endLabel);
+        }
         default -> {
           mv.visitMethodInsn(INVOKESTATIC, "java/util/Objects", "equals",
               "(Ljava/lang/Object;Ljava/lang/Object;)Z", false);

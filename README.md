@@ -1,5 +1,5 @@
 # struct-of-array
-Data structure with the API of an array of structs (AoS) and the internals of a struct of arrays (SoA)
+Two data structure with the API of an array of structs (AoS) and the internals of a struct of arrays (SoA)
 
 The API provides two data structure, a `StructOfArrayList` that have an API similar to an `ArrayList`
 of records but stores the components of the record in different arrays and a `StructOfArrayMap`
@@ -25,6 +25,12 @@ And a similar example using `StructOfArrayMap`
   System.out.println(soaList.get(6));  // Person[18, Bob]
 ```
 
+
+### How to build ?
+Just use Maven
+```bash
+  mvn package
+```
 
 
 

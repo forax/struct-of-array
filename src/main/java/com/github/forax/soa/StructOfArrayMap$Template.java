@@ -53,15 +53,19 @@ public final class StructOfArrayMap$Template extends StructOfArrayMap {
     return false;
   }
 
+  private void copyAll(int newLength) {
+    Snippets.start();
+    array0 = Arrays.copyOf(array0, newLength);
+    array1 = Arrays.copyOf(array1, newLength);
+    Snippets.end();
+  }
+
   @Override
   final void resize() {
     indexes = rehash();
     var newLength = size << 1;
     keys = Arrays.copyOf(keys, newLength);
-    Snippets.start();
-    array0 = Arrays.copyOf(array0, newLength);
-    array1 = Arrays.copyOf(array1, newLength);
-    Snippets.end();
+    copyAll(newLength);
   }
 
   @Override
@@ -82,6 +86,20 @@ public final class StructOfArrayMap$Template extends StructOfArrayMap {
     var values = new StructOfArrayList$Template(size, true, array0, array1);
     Snippets.end();
     return values;
+  }
+
+  private void copyElement(int to, int from) {
+    Snippets.start();
+    array0[to] = array0[from];
+    array1[to] = array1[from];
+    Snippets.end();
+  }
+
+  private void zeroElement(int index) {
+    Snippets.start();
+    //array0[index] = 0;
+    array1[index] = null;
+    Snippets.end();
   }
 
   @Override
@@ -105,16 +123,9 @@ public final class StructOfArrayMap$Template extends StructOfArrayMap {
           var lastKey = keys[last];
           replaceLastKeyIndex(lastKey, last, index);
           keys[index] = lastKey;
-          Snippets.start();
-          array0[index] = array0[last];
-          array1[index] = array1[last];
-          Snippets.end();
+          copyElement(index, last);
         }
-        //keys[last] = 0;
-        Snippets.start();
-        //array0[last] = 0;
-        array1[last] = null;
-        Snippets.end();
+        zeroElement(last);
         size--;
         modCount++;
         return old;

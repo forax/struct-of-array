@@ -30,8 +30,8 @@ import static org.objectweb.asm.Opcodes.ASM9;
 
 class TemplateGenerator {
   public static void main(String[] args) throws IOException {
-    var generator = TemplateGenerator.specialized(StructOfArrayList$Template.class, Person.class);
-    //var generator = TemplateGenerator.specialized(StructOfArrayMap$Template.class, Person.class);
+    //var generator = TemplateGenerator.specialized(StructOfArrayList$Template.class, Person.class);
+    var generator = TemplateGenerator.specialized(StructOfArrayMap$Template.class, Person.class);
     var bytecode = generator.generate();
     Files.write(Path.of(generator.specializedClassName.replace('/', '_')+".class"), bytecode);
   }
@@ -83,34 +83,52 @@ class TemplateGenerator {
       case "com/github/forax/soa/StructOfArrayList$Template.<init>1" -> {
         Templates.templateListInitDefault(mv, specializedClassName, components);
       }
-      case "com/github/forax/soa/StructOfArrayList$Template.valueAt(I)Ljava/lang/Object;0" -> {
-        Templates.templateListGetValue(mv, specializedClassName, recordType, components);
+      case "com/github/forax/soa/StructOfArrayList$Template.valueAt(I)Ljava/lang/Object;0",
+           "com/github/forax/soa/StructOfArrayMap$Template.valueAt(I)Ljava/lang/Object;0" -> {
+        Templates.templateGetValue(mv, specializedClassName, recordType, components);
       }
-      case "com/github/forax/soa/StructOfArrayList$Template.valueAt(ILjava/lang/Object;)V0" -> {
-        Templates.templateListSetValue(mv, specializedClassName, recordType, components);
+      case "com/github/forax/soa/StructOfArrayList$Template.valueAt(ILjava/lang/Object;)V0",
+           "com/github/forax/soa/StructOfArrayMap$Template.valueAt(ILjava/lang/Object;)V0" -> {
+        Templates.templateSetValue(mv, specializedClassName, recordType, components);
       }
-      case "com/github/forax/soa/StructOfArrayList$Template.copyElement(II)V0" -> {
+      case "com/github/forax/soa/StructOfArrayList$Template.copyElement(II)V0",
+           "com/github/forax/soa/StructOfArrayMap$Template.copyElement(II)V0" -> {
         Templates.templateListCopyElement(mv, specializedClassName, components);
       }
-      case "com/github/forax/soa/StructOfArrayList$Template.zeroElement(I)V0" -> {
+      case "com/github/forax/soa/StructOfArrayList$Template.zeroElement(I)V0",
+           "com/github/forax/soa/StructOfArrayMap$Template.zeroElement(I)V0" -> {
         Templates.templateListZeroElement(mv, specializedClassName, components);
       }
       case "com/github/forax/soa/StructOfArrayList$Template.indexOf(Ljava/lang/Object;)I0",
-           "com/github/forax/soa/StructOfArrayList$Template.lastIndexOf(Ljava/lang/Object;)I0" -> {
-        Templates.templateListIndexOfMaterialize(mv, specializedClassName, recordType, components);
+           "com/github/forax/soa/StructOfArrayList$Template.lastIndexOf(Ljava/lang/Object;)I0",
+           "com/github/forax/soa/StructOfArrayMap$Template.containsValue(Ljava/lang/Object;)Z0" -> {
+        Templates.templateIndexOfOrContainsMaterialize(mv, specializedClassName, recordType, components);
       }
       case "com/github/forax/soa/StructOfArrayList$Template.indexOf(Ljava/lang/Object;)I1",
            "com/github/forax/soa/StructOfArrayList$Template.lastIndexOf(Ljava/lang/Object;)I1" -> {
-        Templates.templateListIndexOfEquals(mv, specializedClassName, recordType, components);
+        Templates.templateIndexOfOrContainsEquals(mv, specializedClassName, recordType, components, true);
       }
-      case "com/github/forax/soa/StructOfArrayList$Template.copyAll(I)V0" -> {
-        Templates.templateListCopyAll(mv, specializedClassName, components);
+      case "com/github/forax/soa/StructOfArrayMap$Template.containsValue(Ljava/lang/Object;)Z1" -> {
+        Templates.templateIndexOfOrContainsEquals(mv, specializedClassName, recordType, components, false);
+      }
+      case "com/github/forax/soa/StructOfArrayList$Template.copyAll(I)V0",
+           "com/github/forax/soa/StructOfArrayMap$Template.copyAll(I)V0" -> {
+        Templates.templateCopyAll(mv, specializedClassName, components);
       }
       case "com/github/forax/soa/StructOfArrayList$Template.add(Ljava/lang/Object;)Z0" -> {
         Templates.templateListAddResize(mv, specializedClassName, components);
       }
       case "com/github/forax/soa/StructOfArrayList$Template.clear()V0" -> {
         Templates.templateListClear(mv, specializedClassName, components);
+      }
+      case "com/github/forax/soa/StructOfArrayMap$Template.<init>(I)V0" -> {
+        Templates.templateMapInit(mv, specializedClassName, components);
+      }
+      case "com/github/forax/soa/StructOfArrayMap$Template.clear()V0" -> {
+        Templates.templateMapClear(mv, specializedClassName, components);
+      }
+      case "com/github/forax/soa/StructOfArrayMap$Template.values()Lcom/github/forax/soa/StructOfArrayList;0" -> {
+        Templates.templateMapValues(mv, specializedClassName, components);
       }
       default -> throw new AssertionError("no snippet " + mangled);
     }
@@ -123,7 +141,7 @@ class TemplateGenerator {
     var renamer = new ClassRemapper(checker, new Remapper() {
       @Override
       public String mapType(String internalName) {
-        if (internalName.equals("com/github/forax/soa/StructOfArrayList$Template")) {
+        if (internalName.endsWith("$Template")) {
           return specializedClassName;
         }
         if (internalName.equals("com/github/forax/soa/Person")) {

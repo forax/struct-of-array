@@ -1,5 +1,6 @@
 package com.github.forax.soa;
 
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -103,7 +104,7 @@ class Templates {
     mv.visitInsn(RETURN);
   }
 
-  static void templateListGetValue(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
+  static void templateGetValue(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
     //  3: new           #28                 // class com/github/forax/soa/Person
     //  6: dup
 
@@ -138,7 +139,7 @@ class Templates {
     mv.visitVarInsn(ASTORE, 2);
   }
 
-  static void templateListSetValue(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
+  static void templateSetValue(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
     //  8: aload_0
     //  9: getfield      #7                  // Field array0:[I
     // 12: iload_1
@@ -219,7 +220,7 @@ class Templates {
     }
   }
 
-  static void templateListIndexOfMaterialize(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
+  static void templateIndexOfOrContainsMaterialize(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
     // 22: aload_2
     // 23: invokevirtual #36                 // Method com/github/forax/soa/Person.age:()I
     // 26: istore        4
@@ -239,7 +240,7 @@ class Templates {
     }
   }
 
-  static void templateListIndexOfEquals(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
+  static void templateIndexOfOrContainsEquals(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components, boolean indexResult) {
     // 55: aload_0
     // 56: getfield      #7                  // Field array0:[I
     // 59: iload_3
@@ -283,12 +284,16 @@ class Templates {
       }
     }
 
-    mv.visitVarInsn(ILOAD, 3);
+    if (indexResult) {
+      mv.visitVarInsn(ILOAD, 3);  // return index
+    } else {
+      mv.visitInsn(ICONST_1);  // return true;
+    }
     mv.visitInsn(IRETURN);
     mv.visitLabel(endLabel);
   }
 
-  static void templateListCopyAll(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
+  static void templateCopyAll(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
     //  3: aload_0
     //  4: aload_0
     //  5: getfield      #7                  // Field array0:[I
@@ -373,5 +378,92 @@ class Templates {
       }
       mv.visitFieldInsn(PUTFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
     }
+  }
+
+  static void templateMapInit(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
+    //  8: aload_0
+    //  9: iload_1
+    // 10: newarray       int
+    // 12: putfield      #13                 // Field array0:[I
+
+    // 15: aload_0
+    // 16: iload_1
+    // 17: anewarray     #19                 // class java/lang/String
+    // 20: putfield      #21                 // Field array1:[Ljava/lang/String;
+
+    for (int i = 0; i < components.size(); i++) {
+      var component = components.get(i);
+      var componentType = component.getType();
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitVarInsn(ILOAD, 1);
+      if (componentType.isPrimitive()) {
+        mv.visitIntInsn(NEWARRAY, newArrayKind(componentType));
+      } else {
+        mv.visitTypeInsn(ANEWARRAY, internalName(componentType));
+      }
+      mv.visitFieldInsn(PUTFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
+    }
+  }
+
+  static void templateMapClear(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
+    // 19: aload_0
+    // 20: bipush        16
+    // 22: newarray       int
+    // 24: putfield      #13                 // Field array0:[I
+
+    // 27: aload_0
+    // 28: bipush        16
+    // 30: anewarray     #19                 // class java/lang/String
+    // 33: putfield      #21                 // Field array1:[Ljava/lang/String;
+
+    for (var i = 0; i < components.size(); i++) {
+      var component = components.get(i);
+      var componentType = component.getType();
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitIntInsn(BIPUSH, 16);
+      if (componentType.isPrimitive()) {
+        mv.visitIntInsn(NEWARRAY, newArrayKind(componentType));
+      } else {
+        mv.visitTypeInsn(ANEWARRAY, internalName(componentType));
+      }
+      mv.visitFieldInsn(PUTFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
+    }
+  }
+
+  private static final Handle BSM = new Handle(H_INVOKESTATIC, "com/github/forax/soa/RT", "bsm",
+      "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+      false);
+
+  static void templateMapValues(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
+    //  3: new           #81                 // class com/github/forax/soa/StructOfArrayList$Template
+    //  6: dup
+    //  7: aload_0
+    //  8: getfield      #47                 // Field size:I
+    // 11: iconst_1
+
+    // 12: aload_0
+    // 13: getfield      #13                 // Field array0:[I
+
+    // 16: aload_0
+    // 17: getfield      #21                 // Field array1:[Ljava/lang/String;
+
+    // 20: invokespecial #83                 // Method com/github/forax/soa/StructOfArrayList$Template."<init>":(IZ[I[Ljava/lang/String;)V
+    // 23: astore_1
+
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, specializedClassName, "size", "I");
+    mv.visitInsn(ICONST_1);
+
+    for (var i = 0; i < components.size(); i++) {
+      var component = components.get(i);
+      var componentType = component.getType();
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
+    }
+
+    mv.visitInvokeDynamicInsn("newCanonicalList",
+        "(IZ" + components.stream().map(c -> arrayDescriptor(c.getType())).collect(joining()) + ")Lcom/github/forax/soa/StructOfArrayList;",
+        BSM);
+    mv.visitVarInsn(ASTORE, 1);
   }
 }

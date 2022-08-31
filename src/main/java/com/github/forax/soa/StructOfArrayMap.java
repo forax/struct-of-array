@@ -142,7 +142,7 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
     }
   }
 
-  final void replaceLastKeyIndex(int k, int lastIndex, int newIndex) {
+  void replaceLastKeyIndex(int k, int lastIndex, int newIndex) {
     var slot = k & (indexes.length - 1);
     for(;;) {
       var index = indexes[slot];
@@ -324,13 +324,20 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
 
   public static <T extends Record> StructOfArrayMap<T> of(Class<T> recordType, int capacity) {
     Objects.requireNonNull(recordType);
+    if (!recordType.isRecord()) {
+      throw new IllegalArgumentException("recordType is not a record");
+    }
     if (capacity < 0) {
       throw new IllegalArgumentException("capacity < 0");
     }
-    if (recordType != Person.class) {
-      throw new UnsupportedOperationException("NYI");
-    }
+    var defaultConstructor = RT.defaultMapConstructor(recordType);
     var powerOf2 = Math.max(16, (capacity & (capacity - 1)) == 0? capacity: Integer.highestOneBit(capacity) << 1);
-    return (StructOfArrayMap<T>)(StructOfArrayMap<?>) new StructOfArrayMap$Template(powerOf2);
+    try {
+      return (StructOfArrayMap<T>) defaultConstructor.invokeExact(powerOf2);
+    } catch (RuntimeException | Error e) {
+      throw e;
+    } catch (Throwable t) {
+      throw (LinkageError) new LinkageError().initCause(t);
+    }
   }
 }

@@ -4,13 +4,16 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.RecordComponent;
 import java.util.AbstractList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodType.methodType;
 
@@ -191,32 +194,19 @@ public abstract class StructOfArrayList<T> extends AbstractList<T> {
 
   public static <T extends Record> StructOfArrayList<T> of(Class<T> recordType, int capacity) {
     Objects.requireNonNull(recordType);
+    if (!recordType.isRecord()) {
+      throw new IllegalArgumentException("recordType is not a record");
+    }
     if (capacity < 0) {
       throw new IllegalArgumentException("capacity < 0");
     }
-    var constructor = SPECIALIZED.get(recordType);
+    var defaultConstructor = RT.defaultListConstructor(recordType);
     try {
-      return (StructOfArrayList<T>)constructor.invokeExact(capacity, false);
+      return (StructOfArrayList<T>) defaultConstructor.invokeExact(capacity, false);
     } catch (RuntimeException | Error e) {
       throw e;
     } catch (Throwable t) {
       throw (LinkageError) new LinkageError().initCause(t);
     }
   }
-
-  private static final ClassValue<MethodHandle> SPECIALIZED = new ClassValue<>() {
-    @Override
-    protected MethodHandle computeValue(Class<?> type) {
-      var generator = TemplateGenerator.specialized(StructOfArrayList$Template.class, type);
-      var bytecode = generator.generate();
-      var lookup = MethodHandles.lookup();
-      try {
-        var specializedClass = lookup.defineClass(bytecode);
-        var constructor = lookup.findConstructor(specializedClass, methodType(void.class, int.class, boolean.class));
-        return constructor.asType(methodType(StructOfArrayList.class, int.class, boolean.class));
-      } catch (IllegalAccessException | NoSuchMethodException e) {
-        throw (LinkageError) new LinkageError().initCause(e);
-      }
-    }
-  };
 }

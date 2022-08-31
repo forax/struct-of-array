@@ -9,7 +9,6 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
@@ -27,6 +26,8 @@ import java.util.Objects;
 import static java.util.stream.Collectors.joining;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ASM9;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.INSTANCEOF;
 
 class TemplateGenerator {
   public static void main(String[] args) throws IOException {
@@ -59,18 +60,16 @@ class TemplateGenerator {
     var recordMangledName = recordType.getName().replace('.', '_');
     var specializedClassName = template.getName().replace('.', '/') + '$' + recordMangledName;
     var components = Arrays.stream(recordType.getRecordComponents()).toList();
-    return new TemplateGenerator(templateBytecode, specializedClassName, recordType, components);
+    return new TemplateGenerator(templateBytecode, specializedClassName, components);
   }
 
   private final byte[] templateBytecode;
   private final String specializedClassName;
-  private final Class<?> recordType;
   private final List<RecordComponent> components;
 
-  private TemplateGenerator(byte[] templateBytecode, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
+  private TemplateGenerator(byte[] templateBytecode, String specializedClassName, List<RecordComponent> components) {
     this.templateBytecode = templateBytecode;
     this.specializedClassName = specializedClassName;
-    this.recordType = recordType;
     this.components = components;
   }
 
@@ -85,11 +84,11 @@ class TemplateGenerator {
       }
       case "com/github/forax/soa/StructOfArrayList$Template.valueAt(I)Ljava/lang/Object;0",
            "com/github/forax/soa/StructOfArrayMap$Template.valueAt(I)Ljava/lang/Object;0" -> {
-        Templates.templateGetValue(mv, specializedClassName, recordType, components);
+        Templates.templateGetValue(mv, specializedClassName, components);
       }
       case "com/github/forax/soa/StructOfArrayList$Template.valueAt(ILjava/lang/Object;)V0",
            "com/github/forax/soa/StructOfArrayMap$Template.valueAt(ILjava/lang/Object;)V0" -> {
-        Templates.templateSetValue(mv, specializedClassName, recordType, components);
+        Templates.templateSetValue(mv, specializedClassName, components);
       }
       case "com/github/forax/soa/StructOfArrayList$Template.copyElement(II)V0",
            "com/github/forax/soa/StructOfArrayMap$Template.copyElement(II)V0" -> {
@@ -102,14 +101,14 @@ class TemplateGenerator {
       case "com/github/forax/soa/StructOfArrayList$Template.indexOf(Ljava/lang/Object;)I0",
            "com/github/forax/soa/StructOfArrayList$Template.lastIndexOf(Ljava/lang/Object;)I0",
            "com/github/forax/soa/StructOfArrayMap$Template.containsValue(Ljava/lang/Object;)Z0" -> {
-        Templates.templateIndexOfOrContainsMaterialize(mv, specializedClassName, recordType, components);
+        Templates.templateIndexOfOrContainsMaterialize(mv, components);
       }
       case "com/github/forax/soa/StructOfArrayList$Template.indexOf(Ljava/lang/Object;)I1",
            "com/github/forax/soa/StructOfArrayList$Template.lastIndexOf(Ljava/lang/Object;)I1" -> {
-        Templates.templateIndexOfOrContainsEquals(mv, specializedClassName, recordType, components, true);
+        Templates.templateIndexOfOrContainsEquals(mv, specializedClassName, components, true);
       }
       case "com/github/forax/soa/StructOfArrayMap$Template.containsValue(Ljava/lang/Object;)Z1" -> {
-        Templates.templateIndexOfOrContainsEquals(mv, specializedClassName, recordType, components, false);
+        Templates.templateIndexOfOrContainsEquals(mv, specializedClassName, components, false);
       }
       case "com/github/forax/soa/StructOfArrayList$Template.copyAll(I)V0",
            "com/github/forax/soa/StructOfArrayMap$Template.copyAll(I)V0" -> {
@@ -141,11 +140,10 @@ class TemplateGenerator {
     var renamer = new ClassRemapper(checker, new Remapper() {
       @Override
       public String mapType(String internalName) {
+        assert !internalName.equals("com/github/forax/soa/Person"): "Person should never leak";
+
         if (internalName.endsWith("$Template")) {
           return specializedClassName;
-        }
-        if (internalName.equals("com/github/forax/soa/Person")) {
-          return Type.getInternalName(recordType);
         }
         return super.mapType(internalName);
       }
@@ -249,10 +247,7 @@ class TemplateGenerator {
 
           @Override
           public void visitFrame(int type, int numLocal, Object[] local, int numStack, Object[] stack) {
-            if (insideSnippet) {
-              return;
-            }
-            super.visitFrame(type, numLocal, local, numStack, stack);
+            // do not visit frame, they are reconstructed by the ClassWriter
           }
 
           @Override
@@ -282,6 +277,14 @@ class TemplateGenerator {
           @Override
           public void visitTypeInsn(int opcode, String type) {
             if (insideSnippet) {
+              return;
+            }
+            // reference to the record type should not be present in the bytecode
+            if ((opcode == INSTANCEOF || opcode == CHECKCAST) && type.equals("com/github/forax/soa/Person")) {
+              super.visitInvokeDynamicInsn(
+                  opcode == INSTANCEOF? "instanceof": "checkcast",
+                  opcode == INSTANCEOF? "(Ljava/lang/Object;)Z": "(Ljava/lang/Object;)Ljava/lang/Object;",
+                  Templates.BSM);
               return;
             }
             super.visitTypeInsn(opcode, type);

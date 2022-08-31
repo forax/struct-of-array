@@ -179,28 +179,37 @@ public abstract class StructOfArrayList<T> extends AbstractList<T> {
     };
   }
 
-  public static <T extends Record> StructOfArrayList<T> of(Class<T> recordType) {
+  public static <T extends Record> StructOfArrayList<T> of(Lookup lookup, Class<T> recordType) {
+    Objects.requireNonNull(lookup);
     Objects.requireNonNull(recordType);
-    return of(recordType, 0);
+    return of(lookup, recordType, 0);
   }
 
-  public static <T extends Record> StructOfArrayList<T> of(Class<T> recordType, Collection<? extends T> collection) {
+  public static <T extends Record> StructOfArrayList<T> of(Lookup lookup, Class<T> recordType, Collection<? extends T> collection) {
+    Objects.requireNonNull(lookup);
     Objects.requireNonNull(recordType);
     Objects.requireNonNull(collection);
-    var soaList =  of(recordType, collection.size());
+    var soaList =  of(lookup, recordType, collection.size());
     soaList.addAll(collection);
     return soaList;
   }
 
-  public static <T extends Record> StructOfArrayList<T> of(Class<T> recordType, int capacity) {
+  public static <T extends Record> StructOfArrayList<T> of(Lookup lookup, Class<T> recordType, int capacity) {
+    Objects.requireNonNull(lookup);
     Objects.requireNonNull(recordType);
+    try {
+      lookup.accessClass(recordType);
+    } catch (IllegalAccessException e) {
+      throw new IllegalStateException(e);
+    }
     if (!recordType.isRecord()) {
       throw new IllegalArgumentException("recordType is not a record");
     }
     if (capacity < 0) {
       throw new IllegalArgumentException("capacity < 0");
     }
-    var defaultConstructor = RT.defaultListConstructor(recordType);
+    var erasedLookup = lookup.in(recordType);
+    var defaultConstructor = RT.defaultListConstructor(erasedLookup);
     try {
       return (StructOfArrayList<T>) defaultConstructor.invokeExact(capacity, false);
     } catch (RuntimeException | Error e) {

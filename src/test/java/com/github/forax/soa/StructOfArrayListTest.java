@@ -7,23 +7,24 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.IntStream;
 
+import static java.lang.invoke.MethodHandles.lookup;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class StructOfArrayListTest {
   @Test
   public void of() {
     assertAll(
-        () -> assertThrows(NullPointerException.class, () -> StructOfArrayList.of(null)),
-        () -> assertThrows(NullPointerException.class, () -> StructOfArrayList.of(Person.class, null)),
-        () -> assertThrows(NullPointerException.class, () -> StructOfArrayList.of(null, List.of())),
-        () -> assertThrows(NullPointerException.class, () -> StructOfArrayList.of(null, 8)),
-        () -> assertThrows(IllegalArgumentException.class, () -> StructOfArrayList.of(Person.class, -1))
+        () -> assertThrows(NullPointerException.class, () -> StructOfArrayList.of(lookup(), null)),
+        () -> assertThrows(NullPointerException.class, () -> StructOfArrayList.of(lookup(), Person.class, null)),
+        () -> assertThrows(NullPointerException.class, () -> StructOfArrayList.of(lookup(), null, List.of())),
+        () -> assertThrows(NullPointerException.class, () -> StructOfArrayList.of(lookup(), null, 8)),
+        () -> assertThrows(IllegalArgumentException.class, () -> StructOfArrayList.of(lookup(), Person.class, -1))
     );
   }
 
   @Test
   public void sizeAndIsEmpty() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(18, "Bob"));
     assertAll(
@@ -37,7 +38,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void sizeAndIsEmptyIfEmpty() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     assertAll(
         () -> assertTrue(soaList.isEmpty()),
         () -> assertEquals(0, soaList.size()),
@@ -47,7 +48,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void addAndGet() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(18, "Bob"));
     assertAll(
@@ -65,7 +66,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void addPopulatedAndGet() {
-    var soaList = StructOfArrayList.of(Person.class, List.of(
+    var soaList = StructOfArrayList.of(lookup(), Person.class, List.of(
         new Person(36, "Ana"),
         new Person(18, "Bob")
     ));
@@ -84,13 +85,13 @@ public class StructOfArrayListTest {
 
   @Test
   public void addIndexNotSupported() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     assertThrows(UnsupportedOperationException.class, () -> soaList.add(0, new Person(18, "Bob")));
   }
 
   @Test
   public void addAndSet() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(18, "Bob"));
     soaList.add(new Person(22, "Bob"));
@@ -114,7 +115,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void addResizeAndLoop() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     IntStream.range(0, 1_000_000)
         .forEach(i ->soaList.add(new Person(i, "" + i)));
     var index = 0;
@@ -127,7 +128,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void addNoResizeAndLoop() {
-    var soaList = StructOfArrayList.of(Person.class, 1_000_000);
+    var soaList = StructOfArrayList.of(lookup(), Person.class, 1_000_000);
     IntStream.range(0, 1_000_000)
         .forEach(i ->soaList.add(new Person(i, "" + i)));
     var index = 0;
@@ -140,13 +141,13 @@ public class StructOfArrayListTest {
 
   @Test
   public void addNull() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     assertThrows(NullPointerException.class, () -> soaList.add(null));
   }
 
   @Test
   public void addAndRemoveIndex() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(18, "Bob"));
     var removed = soaList.remove(0);
@@ -163,7 +164,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void removeIndexOutOfBounds() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     assertAll(
         () -> assertEquals(List.of(new Person(36, "Ana")), soaList),
@@ -174,7 +175,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void addAndRemoveObject() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Elo"));
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(18, "Bob"));
@@ -197,7 +198,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void addAndRemoveObjectNotFound() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(77, "Elo"));
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(18, "Bob"));
@@ -222,7 +223,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void addAndRemoveObjectInvalidType() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Elo"));
     soaList.add(new Person(18, "Bob"));
     var result = soaList.remove("hello");
@@ -241,7 +242,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void removeBySwappingLast() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(77, "Elo"));
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(18, "Bob"));
@@ -265,7 +266,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void removeBySwappingLastOnlyOneElement() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(77, "Elo"));
     var removed = soaList.remove(0);
     assertAll(
@@ -280,7 +281,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void contains() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     soaList.add(new Person(18, "Bob"));
@@ -300,7 +301,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void containsInvalidType() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     var result = soaList.contains("foo");
@@ -315,7 +316,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void containsNotFound() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     soaList.add(new Person(18, "Bob"));
@@ -333,7 +334,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void indexOf() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     soaList.add(new Person(18, "Bob"));
@@ -353,7 +354,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void indexOfInvalidType() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     var index = soaList.indexOf("foo");
@@ -368,7 +369,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void indexOfNotFound() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     soaList.add(new Person(18, "Bob"));
@@ -386,7 +387,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void lastIndexOf() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     soaList.add(new Person(18, "Bob"));
@@ -405,7 +406,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void lastIndexOfInvalidType() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     var index = soaList.lastIndexOf("foo");
@@ -420,7 +421,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void lastIndexOfNotFound() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     soaList.add(new Person(18, "Bob"));
@@ -438,7 +439,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void clear() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     soaList.clear();
@@ -453,7 +454,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void iterator() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     var iterator = soaList.iterator();
@@ -472,7 +473,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void iteratorAddFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.iterator();
     soaList.add(new Person(77, "Elo"));
@@ -481,7 +482,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void iteratorRemoveFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.iterator();
     soaList.remove(new Person(36, "Ana"));
@@ -490,7 +491,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void iteratorRemoveIndexFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.iterator();
     soaList.remove(0);
@@ -499,7 +500,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIterator() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     assertAll(
@@ -525,7 +526,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIteratorAddFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.listIterator();
     soaList.add(new Person(77, "Elo"));
@@ -534,7 +535,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIteratorRemoveFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.listIterator();
     soaList.remove(new Person(36, "Ana"));
@@ -543,7 +544,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIteratorRemoveIndexFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.listIterator();
     soaList.remove(0);
@@ -552,7 +553,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIteratorPreviousAddFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.listIterator(1);
     soaList.add(new Person(77, "Elo"));
@@ -561,7 +562,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIteratorPreviousRemoveFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.listIterator(1);
     soaList.remove(new Person(36, "Ana"));
@@ -570,7 +571,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIteratorPreviousRemoveIndexFailFast() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.listIterator(1);
     soaList.remove(0);
@@ -579,7 +580,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIteratorReverse() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     var iterator = soaList.listIterator(2);
@@ -599,7 +600,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIteratorSet() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     var iterator = soaList.listIterator();
@@ -615,7 +616,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIteratorSetPreconditions() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     var iterator = soaList.listIterator();
     assertAll(
@@ -626,7 +627,7 @@ public class StructOfArrayListTest {
 
   @Test
   public void listIteratorReverseSet() {
-    var soaList = StructOfArrayList.of(Person.class);
+    var soaList = StructOfArrayList.of(lookup(), Person.class);
     soaList.add(new Person(36, "Ana"));
     soaList.add(new Person(77, "Elo"));
     var iterator = soaList.listIterator(2);

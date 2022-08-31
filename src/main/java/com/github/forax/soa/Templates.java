@@ -104,7 +104,7 @@ class Templates {
     mv.visitInsn(RETURN);
   }
 
-  static void templateGetValue(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
+  static void templateGetValue(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
     //  3: new           #28                 // class com/github/forax/soa/Person
     //  6: dup
 
@@ -121,9 +121,6 @@ class Templates {
     // 19: invokespecial #30                 // Method com/github/forax/soa/Person."<init>":(ILjava/lang/String;)V
     // 22: astore_2
 
-    mv.visitTypeInsn(NEW, internalName(recordType));
-    mv.visitInsn(DUP);
-
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
       var componentType = component.getType();
@@ -133,13 +130,13 @@ class Templates {
       mv.visitInsn(Type.getType(componentType).getOpcode(IALOAD));
     }
 
-    mv.visitMethodInsn(INVOKESPECIAL, internalName(recordType), "<init>",
-        "(" + components.stream().map(c -> c.getType().descriptorString()).collect(joining()) + ")V",
-        false);
+    mv.visitInvokeDynamicInsn("new",
+        "(" + components.stream().map(c -> c.getType().descriptorString()).collect(joining()) + ")Ljava/lang/Object;",
+        BSM);
     mv.visitVarInsn(ASTORE, 2);
   }
 
-  static void templateSetValue(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
+  static void templateSetValue(MethodVisitor mv, String specializedClassName, List<RecordComponent> components) {
     //  8: aload_0
     //  9: getfield      #7                  // Field array0:[I
     // 12: iload_1
@@ -161,7 +158,7 @@ class Templates {
       mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
       mv.visitVarInsn(ILOAD, 1);
       mv.visitVarInsn(ALOAD, 3);
-      mv.visitMethodInsn(INVOKEVIRTUAL, internalName(recordType), component.getName(), "()" + componentType.descriptorString(), false);
+      mv.visitInvokeDynamicInsn(component.getName(), "(Ljava/lang/Object;)" + componentType.descriptorString(), BSM_RECORD_ACCESS);
       mv.visitInsn(Type.getType(componentType).getOpcode(IASTORE));
     }
   }
@@ -220,7 +217,7 @@ class Templates {
     }
   }
 
-  static void templateIndexOfOrContainsMaterialize(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components) {
+  static void templateIndexOfOrContainsMaterialize(MethodVisitor mv, List<RecordComponent> components) {
     // 22: aload_2
     // 23: invokevirtual #36                 // Method com/github/forax/soa/Person.age:()I
     // 26: istore        4
@@ -234,13 +231,13 @@ class Templates {
     for (var component : components) {
       var componentType = component.getType();
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitMethodInsn(INVOKEVIRTUAL, internalName(recordType), component.getName(), "()" + componentType.descriptorString(), false);
+      mv.visitInvokeDynamicInsn(component.getName(), "(Ljava/lang/Object;)" + componentType.descriptorString(), BSM_RECORD_ACCESS);
       mv.visitVarInsn(Type.getType(componentType).getOpcode(ISTORE), slot);
       slot += (componentType == long.class || componentType == double.class) ? 2 : 1;
     }
   }
 
-  static void templateIndexOfOrContainsEquals(MethodVisitor mv, String specializedClassName, Class<?> recordType, List<RecordComponent> components, boolean indexResult) {
+  static void templateIndexOfOrContainsEquals(MethodVisitor mv, String specializedClassName, List<RecordComponent> components, boolean indexResult) {
     // 55: aload_0
     // 56: getfield      #7                  // Field array0:[I
     // 59: iload_3
@@ -430,7 +427,11 @@ class Templates {
     }
   }
 
-  private static final Handle BSM = new Handle(H_INVOKESTATIC, "com/github/forax/soa/RT", "bsm",
+  static final Handle BSM = new Handle(H_INVOKESTATIC, "com/github/forax/soa/RT", "bsm",
+      "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+      false);
+
+  static final Handle BSM_RECORD_ACCESS = new Handle(H_INVOKESTATIC, "com/github/forax/soa/RT", "bsm_record_access",
       "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
       false);
 

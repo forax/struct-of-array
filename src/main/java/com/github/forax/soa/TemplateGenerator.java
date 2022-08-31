@@ -142,8 +142,11 @@ final class TemplateGenerator {
   public byte[] generate() {
     var reader = new ClassReader(templateBytecode);
     var writer = new ClassWriter(reader, ClassWriter.COMPUTE_FRAMES);
-    var checker = new CheckClassAdapter(writer, true);
-    var renamer = new ClassRemapper(checker, new Remapper() {
+    ClassVisitor visitor = writer;
+    if (TemplateGenerator.class.desiredAssertionStatus()) {
+      visitor = new CheckClassAdapter(visitor, true);
+    }
+    var renamer = new ClassRemapper(visitor, new Remapper() {
       @Override
       public String mapType(String internalName) {
         assert !internalName.equals("com/github/forax/soa/Person"): "Person should never leak";

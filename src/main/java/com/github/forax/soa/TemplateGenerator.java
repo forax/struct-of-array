@@ -16,7 +16,6 @@ import org.objectweb.asm.util.CheckClassAdapter;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.RecordComponent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -50,6 +49,10 @@ final class TemplateGenerator {
     }
   }
 
+  private static Class<?> erase(Class<?> type) {
+    return type.isPrimitive()? type: Object.class;
+  }
+
   public static TemplateGenerator specialized(Class<?> template, Class<?> recordType) {
     Objects.requireNonNull(template, "template is null");
     Objects.requireNonNull(recordType, "record type is null");
@@ -59,15 +62,18 @@ final class TemplateGenerator {
     var templateBytecode = templateBytecode(template);
     var recordMangledName = recordType.getName().replace('.', '_');
     var specializedClassName = template.getName().replace('.', '/') + '$' + recordMangledName;
-    var components = Arrays.stream(recordType.getRecordComponents()).toList();
+    var components =
+        Arrays.stream(recordType.getRecordComponents())
+            .map(c -> new Templates.RecordComponent(c.getName(), erase(c.getType())))
+            .toList();
     return new TemplateGenerator(templateBytecode, specializedClassName, components);
   }
 
   private final byte[] templateBytecode;
   private final String specializedClassName;
-  private final List<RecordComponent> components;
+  private final List<Templates.RecordComponent> components;
 
-  private TemplateGenerator(byte[] templateBytecode, String specializedClassName, List<RecordComponent> components) {
+  private TemplateGenerator(byte[] templateBytecode, String specializedClassName, List<Templates.RecordComponent> components) {
     this.templateBytecode = templateBytecode;
     this.specializedClassName = specializedClassName;
     this.components = components;
@@ -160,7 +166,7 @@ final class TemplateGenerator {
         // add fields
         for (var i = 0; i < components.size(); i++) {
           var component = components.get(i);
-          var componentType = component.getType();
+          var componentType = component.type();
           super.visitField(ACC_PRIVATE, "array" + i, "[" + componentType.descriptorString(), null, null);
         }
       }
@@ -178,7 +184,7 @@ final class TemplateGenerator {
         } else {
           // canonical constructor
           snippetNumber = 0;
-          initMethodDescriptor = "(IZ" + components.stream().map(c -> "[" + c.getType().descriptorString()).collect(joining())+ ")V";
+          initMethodDescriptor = "(IZ" + components.stream().map(c -> "[" + c.type().descriptorString()).collect(joining())+ ")V";
         }
         var mv = super.visitMethod(access, methodName, initMethodDescriptor, null, null);
         mv.visitCode();

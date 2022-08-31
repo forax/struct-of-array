@@ -5,7 +5,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
-import java.lang.reflect.RecordComponent;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -15,6 +14,8 @@ import static org.objectweb.asm.Opcodes.*;
 
 final class Templates {
   private Templates() {}
+
+  record RecordComponent(String name, Class<?> type) { }
 
   private static String arrayDescriptor(Class<?> componentType) {
     return '[' + componentType.descriptorString();
@@ -65,7 +66,7 @@ final class Templates {
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, parameterStart + i);
       mv.visitFieldInsn(PUTFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
@@ -92,7 +93,7 @@ final class Templates {
     mv.visitVarInsn(ILOAD, 2);
 
     for(var component: components) {
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ILOAD, 1);
       if (componentType.isPrimitive()) {
         mv.visitIntInsn(NEWARRAY, newArrayKind(componentType));
@@ -101,7 +102,7 @@ final class Templates {
       }
     }
     mv.visitMethodInsn(INVOKESPECIAL, specializedClassName, "<init>",
-        "(IZ" + components.stream().map(c -> arrayDescriptor(c.getType())).collect(Collectors.joining()) + ")V",
+        "(IZ" + components.stream().map(c -> arrayDescriptor(c.type())).collect(Collectors.joining()) + ")V",
         false);
     mv.visitInsn(RETURN);
   }
@@ -125,7 +126,7 @@ final class Templates {
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
       mv.visitVarInsn(ILOAD, 1);
@@ -133,7 +134,7 @@ final class Templates {
     }
 
     mv.visitInvokeDynamicInsn("new",
-        "(" + components.stream().map(c -> c.getType().descriptorString()).collect(joining()) + ")Ljava/lang/Object;",
+        "(" + components.stream().map(c -> c.type().descriptorString()).collect(joining()) + ")Ljava/lang/Object;",
         BSM);
     mv.visitVarInsn(ASTORE, 2);
   }
@@ -155,12 +156,12 @@ final class Templates {
 
     for (int i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
       mv.visitVarInsn(ILOAD, 1);
       mv.visitVarInsn(ALOAD, 3);
-      mv.visitInvokeDynamicInsn(component.getName(), "(Ljava/lang/Object;)" + componentType.descriptorString(), BSM_RECORD_ACCESS);
+      mv.visitInvokeDynamicInsn(component.name(), "(Ljava/lang/Object;)" + componentType.descriptorString(), BSM_RECORD_ACCESS);
       mv.visitInsn(Type.getType(componentType).getOpcode(IASTORE));
     }
   }
@@ -186,7 +187,7 @@ final class Templates {
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
       mv.visitVarInsn(ILOAD, 1);
@@ -207,7 +208,7 @@ final class Templates {
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       if (componentType.isPrimitive()) {
         continue;
       }
@@ -231,9 +232,9 @@ final class Templates {
     var slot = 4;
 
     for (var component : components) {
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 2);
-      mv.visitInvokeDynamicInsn(component.getName(), "(Ljava/lang/Object;)" + componentType.descriptorString(), BSM_RECORD_ACCESS);
+      mv.visitInvokeDynamicInsn(component.name(), "(Ljava/lang/Object;)" + componentType.descriptorString(), BSM_RECORD_ACCESS);
       mv.visitVarInsn(Type.getType(componentType).getOpcode(ISTORE), slot);
       slot += (componentType == long.class || componentType == double.class) ? 2 : 1;
     }
@@ -264,7 +265,7 @@ final class Templates {
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
       mv.visitVarInsn(ILOAD, 3);
@@ -310,7 +311,7 @@ final class Templates {
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
@@ -339,7 +340,7 @@ final class Templates {
     if (components.isEmpty()) {
       return;  // no component, no resize needed
     }
-    var firstComponentType = components.get(0).getType();
+    var firstComponentType = components.get(0).type();
 
     var endLabel = new Label();
 
@@ -367,7 +368,7 @@ final class Templates {
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitInsn(ICONST_0);
       if (componentType.isPrimitive()) {
@@ -392,7 +393,7 @@ final class Templates {
 
     for (int i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ILOAD, 1);
       if (componentType.isPrimitive()) {
@@ -417,7 +418,7 @@ final class Templates {
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitIntInsn(BIPUSH, 16);
       if (componentType.isPrimitive()) {
@@ -459,13 +460,13 @@ final class Templates {
 
     for (var i = 0; i < components.size(); i++) {
       var component = components.get(i);
-      var componentType = component.getType();
+      var componentType = component.type();
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, specializedClassName, "array" + i, arrayDescriptor(componentType));
     }
 
     mv.visitInvokeDynamicInsn("newCanonicalList",
-        "(IZ" + components.stream().map(c -> arrayDescriptor(c.getType())).collect(joining()) + ")Lcom/github/forax/soa/StructOfArrayList;",
+        "(IZ" + components.stream().map(c -> arrayDescriptor(c.type())).collect(joining()) + ")Lcom/github/forax/soa/StructOfArrayList;",
         BSM);
     mv.visitVarInsn(ASTORE, 1);
   }

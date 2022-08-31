@@ -41,8 +41,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.10.1</version>
                 <configuration>
-                    <release>19</release>
-                    <compilerArgs>--enable-preview</compilerArgs>
+                    <release>17</release>
                 </configuration>
             </plugin>
 
@@ -50,9 +49,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M7</version>
-                <configuration>
-                    <argLine>--enable-preview</argLine>
-                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -99,8 +99,13 @@ final class RT {
     }
   }
 
-  static MethodHandle defaultMapConstructor(Class<?> recordType) {
-    return SPECIES_MAP.get(recordType).defaultConstructor();
+  static MethodHandle defaultMapConstructor(Lookup recordLookup) {
+    LOOKUP_LOCAL.set(recordLookup);
+    try {
+      return SPECIES_MAP.get(recordLookup.lookupClass()).defaultConstructor();
+    } finally {
+      LOOKUP_LOCAL.set(recordLookup);
+    }
   }
 
 

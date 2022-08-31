@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static java.lang.invoke.MethodHandles.lookup;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,7 +14,7 @@ public class StructOfArrayMapTest2 {
 
   @Test
   public void emptyRecord() {
-    var soaMap = StructOfArrayMap.of(EmptyRecord.class);
+    var soaMap = StructOfArrayMap.of(lookup(), EmptyRecord.class);
     soaMap.put(7, new EmptyRecord());
     soaMap.put(42, new EmptyRecord());
     assertAll(
@@ -31,7 +32,7 @@ public class StructOfArrayMapTest2 {
 
   @Test
   public void pointPut() {
-    var soaMap = StructOfArrayMap.of(Point.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Point.class);
     soaMap.put(1, new Point(1, 3));
     soaMap.put(14, new Point(14, 51));
     assertAll(
@@ -50,7 +51,7 @@ public class StructOfArrayMapTest2 {
 
   //@Test  // FIXME
   public void withDoubleAndFloat() {
-    var soaMap = StructOfArrayMap.of(RecordWithDoubleAndFloat.class);
+    var soaMap = StructOfArrayMap.of(lookup(), RecordWithDoubleAndFloat.class);
     soaMap.put(19, new RecordWithDoubleAndFloat(2.0, 1f));
     soaMap.put(42, new RecordWithDoubleAndFloat(4.0, 2f));
     assertAll(

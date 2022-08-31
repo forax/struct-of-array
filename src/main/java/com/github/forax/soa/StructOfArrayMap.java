@@ -1,5 +1,6 @@
 package com.github.forax.soa;
 
+import java.lang.invoke.MethodHandles.Lookup;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Arrays;
@@ -309,28 +310,37 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
     }
   }
 
-  public static <T extends Record> StructOfArrayMap<T> of(Class<T> recordType) {
+  public static <T extends Record> StructOfArrayMap<T> of(Lookup lookup, Class<T> recordType) {
+    Objects.requireNonNull(lookup);
     Objects.requireNonNull(recordType);
-    return of(recordType, 0);
+    return of(lookup, recordType, 0);
   }
 
-  public static <T extends Record> StructOfArrayMap<T> of(Class<T> recordType, Map<? extends Integer, ? extends T> map) {
+  public static <T extends Record> StructOfArrayMap<T> of(Lookup lookup, Class<T> recordType, Map<? extends Integer, ? extends T> map) {
+    Objects.requireNonNull(lookup);
     Objects.requireNonNull(recordType);
     Objects.requireNonNull(map);
-    var soaMap =  of(recordType, map.size());
+    var soaMap =  of(lookup, recordType, map.size());
     soaMap.putAll(map);
     return soaMap;
   }
 
-  public static <T extends Record> StructOfArrayMap<T> of(Class<T> recordType, int capacity) {
+  public static <T extends Record> StructOfArrayMap<T> of(Lookup lookup, Class<T> recordType, int capacity) {
+    Objects.requireNonNull(lookup);
     Objects.requireNonNull(recordType);
+    try {
+      lookup.accessClass(recordType);
+    } catch (IllegalAccessException e) {
+      throw new IllegalStateException(e);
+    }
     if (!recordType.isRecord()) {
       throw new IllegalArgumentException("recordType is not a record");
     }
     if (capacity < 0) {
       throw new IllegalArgumentException("capacity < 0");
     }
-    var defaultConstructor = RT.defaultMapConstructor(recordType);
+    var erasedLookup = lookup.in(recordType);
+    var defaultConstructor = RT.defaultMapConstructor(erasedLookup);
     var powerOf2 = Math.max(16, (capacity & (capacity - 1)) == 0? capacity: Integer.highestOneBit(capacity) << 1);
     try {
       return (StructOfArrayMap<T>) defaultConstructor.invokeExact(powerOf2);

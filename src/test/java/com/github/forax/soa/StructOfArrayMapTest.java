@@ -10,23 +10,24 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import static java.lang.invoke.MethodHandles.lookup;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class StructOfArrayMapTest {
   @Test
   public void of() {
     assertAll(
-        () -> assertThrows(NullPointerException.class, () -> StructOfArrayMap.of(null)),
-        () -> assertThrows(NullPointerException.class, () -> StructOfArrayMap.of(Person.class, null)),
-        () -> assertThrows(NullPointerException.class, () -> StructOfArrayMap.of(null, Map.of())),
-        () -> assertThrows(NullPointerException.class, () -> StructOfArrayMap.of(null, 8)),
-        () -> assertThrows(IllegalArgumentException.class, () -> StructOfArrayMap.of(Person.class, -1))
+        () -> assertThrows(NullPointerException.class, () -> StructOfArrayMap.of(lookup(), null)),
+        () -> assertThrows(NullPointerException.class, () -> StructOfArrayMap.of(lookup(), Person.class, null)),
+        () -> assertThrows(NullPointerException.class, () -> StructOfArrayMap.of(lookup(), null, Map.of())),
+        () -> assertThrows(NullPointerException.class, () -> StructOfArrayMap.of(lookup(), null, 8)),
+        () -> assertThrows(IllegalArgumentException.class, () -> StructOfArrayMap.of(lookup(), Person.class, -1))
     );
   }
 
   @Test
   public void ofMap() {
-    var soaMap = StructOfArrayMap.of(Person.class,
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class,
         Map.of(
             1, new Person(1, "A"),
             17, new Person(2, "B"),
@@ -41,7 +42,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void empty() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     assertAll(
         () -> assertEquals(0, soaMap.size()),
         () -> assertTrue(soaMap.isEmpty()),
@@ -55,7 +56,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void putAndGet() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(21, new Person(21, "Ana"));
     soaMap.put(20, new Person(20, "Bob"));
     assertAll(
@@ -73,7 +74,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void putSameKey() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(32, new Person(21, "Ana"));
     soaMap.put(32, new Person(20, "Bob"));
     assertAll(
@@ -89,7 +90,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void putPreconditions() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     assertAll(
         () -> assertThrows(NullPointerException.class, () -> soaMap.put(null, new Person(34, "Ana"))),
         () -> assertThrows(NullPointerException.class, () -> soaMap.put(3, null))
@@ -98,7 +99,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void putCollisions() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(1, new Person(1, "A"));
     soaMap.put(17, new Person(2, "B"));
     soaMap.put(33, new Person(3, "C"));
@@ -114,7 +115,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void putResizeAndGet() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     IntStream.range(0, 10_000_000)
             .forEach(i -> soaMap.put(i, new Person(i, "" + i)));
     for(var i = 0; i < soaMap.size(); i++) {
@@ -124,7 +125,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void putResizeCollisions() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     IntStream.iterate(1, x -> x + 32)
             .limit(40)
             .forEach(i -> soaMap.put(i, new Person(i, "" + i)));
@@ -138,14 +139,14 @@ public class StructOfArrayMapTest {
 
   @Test
   public void putNoResize() {
-    var soaMap = StructOfArrayMap.of(Person.class, 10_000_000);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class, 10_000_000);
     IntStream.range(0, 10_000_000)
         .forEach(i -> soaMap.put(i, new Person(i, "" + i)));
   }
 
   @Test
   public void getPreconditions() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     assertAll(
         () -> assertThrows(NullPointerException.class, () -> soaMap.get(null)),
         () -> assertThrows(NullPointerException.class, () -> soaMap.getOrDefault(null, new Person(16, "Ana")))
@@ -154,7 +155,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void containsValue() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(10, new Person(10, "Ana"));
     soaMap.put(6, new Person(12, "Bob"));
     assertAll(
@@ -169,7 +170,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void containsKey() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(10, new Person(10, "Ana"));
     soaMap.put(6, new Person(12, "Bob"));
     assertAll(
@@ -184,7 +185,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void putResizeAndContainsKey() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     IntStream.range(0, 10_000_000)
         .forEach(i -> soaMap.put(i, new Person(i, "" + i)));
     for(var i = 0; i < soaMap.size(); i++) {
@@ -194,7 +195,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void forEach() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(10, new Person(10, "Ana"));
     soaMap.put(6, new Person(12, "Bob"));
     soaMap.forEach((integer, person) -> {
@@ -208,14 +209,14 @@ public class StructOfArrayMapTest {
 
   @Test
   public void forEachEmpty() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.forEach((integer, person) -> fail());
     assertThrows(NullPointerException.class, () -> soaMap.forEach(null));
   }
 
   @Test
   public void putResizeAndForEach() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     IntStream.range(0, 10_000_000)
         .forEach(i -> soaMap.put(i, new Person(i, "" + i)));
     var box = new Object() { int index; };
@@ -231,7 +232,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void removeNoEntry() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(48, new Person(54, "Ana"));
     assertAll(
         () -> assertNull(soaMap.remove(42)),
@@ -245,7 +246,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void removeNoEntryAnymore() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(48, new Person(54, "Ana"));
     var result = soaMap.remove(48);
     assertAll(
@@ -258,7 +259,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void removeTombstoneWorks() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     soaMap.put(16, new Person(2, "B"));
     soaMap.put(32, new Person(3, "C"));
@@ -277,7 +278,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void removeTombstoneWorks2() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     soaMap.put(16, new Person(2, "B"));
     soaMap.put(32, new Person(3, "C"));
@@ -296,7 +297,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void clear() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     soaMap.clear();
     assertAll(
@@ -308,7 +309,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void replaceTombstoneWorks() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     soaMap.put(16, new Person(2, "B"));
     soaMap.put(7, new Person(3, "C"));
@@ -329,7 +330,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void replaceNoEntry() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     var result = soaMap.replace(16, new Person(99, "Z"));
     assertAll(
@@ -341,7 +342,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void replaceNoEntryTombstone() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     soaMap.remove(0);
     var result = soaMap.replace(16, new Person(99, "Z"));
@@ -353,7 +354,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void replacePreconditions() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     assertAll(
         () -> assertThrows(NullPointerException.class, () -> soaMap.replace(null, new Person(0, ""))),
         () -> assertThrows(NullPointerException.class, () -> soaMap.replace(42, null))
@@ -362,7 +363,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void entrySet() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     soaMap.put(16, new Person(2, "B"));
     soaMap.put(8, new Person(3, "C"));
@@ -378,7 +379,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void entrySetAsList() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     soaMap.put(16, new Person(2, "B"));
     soaMap.put(8, new Person(3, "C"));
@@ -394,7 +395,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void entrySetEntrySetValue() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     soaMap.put(16, new Person(2, "B"));
     soaMap.put(8, new Person(3, "C"));
@@ -413,7 +414,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void entrySetEntryToString() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     var entry = soaMap.entrySet().iterator().next();
     assertEquals("0=Person[age=1, name=A]", entry.toString());
@@ -421,7 +422,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void entrySetIterator() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(42, new Person(1, "A"));
     var iterator = soaMap.entrySet().iterator();
     assertTrue(iterator.hasNext());
@@ -432,7 +433,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void entrySetIteratorFailFast() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(42, new Person(1, "A"));
     var iterator = soaMap.entrySet().iterator();
     soaMap.put(777, new Person(2, "B"));
@@ -441,7 +442,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void keySet() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     soaMap.put(16, new Person(2, "B"));
     soaMap.put(8, new Person(3, "C"));
@@ -451,7 +452,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void keySetStructurallyUnmodifiable() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     var keySet = soaMap.keySet();
     assertAll(
         () -> assertThrows(UnsupportedOperationException.class, () -> keySet.add(3)),
@@ -461,7 +462,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void keySetContains() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(1, new Person(1, "A"));
     soaMap.put(2, new Person(2, "B"));
     soaMap.put(17, new Person(3, "C"));
@@ -476,7 +477,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void keySetIterator() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(42, new Person(1, "A"));
     var iterator = soaMap.keySet().iterator();
     assertTrue(iterator.hasNext());
@@ -487,7 +488,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void keySetIteratorFailFast() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(42, new Person(1, "A"));
     var iterator = soaMap.keySet().iterator();
     soaMap.put(777, new Person(2, "B"));
@@ -496,7 +497,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void values() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     soaMap.put(0, new Person(1, "A"));
     soaMap.put(16, new Person(2, "B"));
     soaMap.put(8, new Person(3, "C"));
@@ -509,7 +510,7 @@ public class StructOfArrayMapTest {
 
   @Test
   public void valuesStructurallyUnmodifiable() {
-    var soaMap = StructOfArrayMap.of(Person.class);
+    var soaMap = StructOfArrayMap.of(lookup(), Person.class);
     var values = soaMap.values();
     assertAll(
         () -> assertThrows(UnsupportedOperationException.class, () -> values.add(new Person(31, "Ana"))),

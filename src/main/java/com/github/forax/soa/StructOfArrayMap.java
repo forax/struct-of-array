@@ -13,7 +13,34 @@ import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
+/**
+ * A hash map that stores integer keys and record values inside a struct of arrays.
+ * <p>
+ * This representation is more compact than using a {@link java.util.HashMap} but
+ * if less efficient once the threshold of few thousand items is crossed.
+ * <p>
+ * The {@link #values()} are viewed as an {@link StructOfArrayList} so are kept in the insertion order
+ * apart if {@link #remove(Object)} is called. This view does not allow structural modification so
+ * {@link StructOfArrayList#add(Object)}, {@link StructOfArrayList#remove(int)} and
+ * {@link StructOfArrayList#remove(Object)} are not supported.
+ * <p>
+ * Iterating over the keys or the values is very efficient (if everything is kept in the L2 cache)
+ * because the iteration is not done on the hash table itself.
+ * <p>
+ * Structural modification are not allowed during an iteration, so {@link Iterator#remove()}
+ * is not implemented on {@link #keySet()}, {@link #entrySet()} or {@link #values()}.
+ * <p>
+ * Null as a value is not supported (it's not a record after all) so all methods that takes
+ * a key or a value as parameter throw a {@link NullPointerException} if {@code null} is passed.
+ * <p>
+ * If you know the approximative size of the list, consider using {@link #of(Lookup, Class, int)}
+ * with the capacity as last parameter.
+ *
+ * @param <E> the type of the item
+ *
+ * @see StructOfArrayList
+ */
+public abstract class StructOfArrayMap<E> extends AbstractMap<Integer, E> {
   static final int EMPTY = -1;
   static final int TOMBSTONE = -2;
 
@@ -85,12 +112,12 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
   }
 
   @Override
-  public final T get(Object key) {
+  public final E get(Object key) {
     return getOrDefault(key, null);
   }
 
   @Override
-  public final T getOrDefault(Object key, T defaultValue) {
+  public final E getOrDefault(Object key, E defaultValue) {
     Objects.requireNonNull(key);
     if (!(key instanceof Integer value)) {
       return defaultValue;
@@ -112,7 +139,7 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
   abstract void resize();
 
   @Override
-  public final T put(Integer key, T value) {
+  public final E put(Integer key, E value) {
     Objects.requireNonNull(key);
     Objects.requireNonNull(value);
     var k = (int) key;
@@ -157,7 +184,7 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
   }
 
   @Override
-  public final T replace(Integer key, T value) {
+  public final E replace(Integer key, E value) {
     Objects.requireNonNull(key);
     Objects.requireNonNull(value);
     var k = (int) key;
@@ -176,11 +203,11 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
     }
   }
 
-  abstract T valueAt(int index);
-  abstract void valueAt(int index, T element);
+  abstract E valueAt(int index);
+  abstract void valueAt(int index, E element);
 
   @Override
-  public final Set<Entry<Integer, T>> entrySet() {
+  public final Set<Entry<Integer, E>> entrySet() {
     return new AbstractSet<>() {
       @Override
       public int size() {
@@ -188,7 +215,12 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
       }
 
       @Override
-      public Iterator<Entry<Integer, T>> iterator() {
+      public boolean remove(Object o) {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
+      public Iterator<Entry<Integer, E>> iterator() {
         var keys = StructOfArrayMap.this.keys;
         var currentCount = modCount;
         return new Iterator<>() {
@@ -200,7 +232,7 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
           }
 
           @Override
-          public Entry<Integer, T> next() {
+          public Entry<Integer, E> next() {
             if (modCount != currentCount) {
               throw new ConcurrentModificationException();
             }
@@ -234,12 +266,12 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
               }
 
               @Override
-              public T getValue() {
+              public E getValue() {
                 return valueAt(index);
               }
 
               @Override
-              public T setValue(T value) {
+              public E setValue(E value) {
                 var old = valueAt(index);
                 valueAt(index, value);
                 return old;
@@ -297,25 +329,45 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
   }
 
   @Override
-  public abstract StructOfArrayList<T> values();
+  public abstract StructOfArrayList<E> values();
 
   @Override
-  public void forEach(BiConsumer<? super Integer, ? super T> action) {
+  public void forEach(BiConsumer<? super Integer, ? super E> action) {
     Objects.requireNonNull(action);
-    for (int index : indexes) {
-      if (index < 0) {  // EMPTY or TOMBSTONE
-        continue;
-      }
-      action.accept(keys[index], valueAt(index));
+    for (var i = 0; i < size; i++) {
+      action.accept(keys[i], valueAt(i));
     }
   }
 
+  /**
+   * Create an empty map.
+   *
+   * @param lookup a lookup that can access to the record
+   * @param recordType a record class
+   * @return a fresh empty map
+   * @throws NullPointerException if one of the parameter is null
+   * @throws IllegalArgumentException if the recordType is not a record
+   * @throws IllegalStateException if the lookup can not access to the record class
+   * @param <T> the type of the map value
+   */
   public static <T extends Record> StructOfArrayMap<T> of(Lookup lookup, Class<T> recordType) {
     Objects.requireNonNull(lookup);
     Objects.requireNonNull(recordType);
     return of(lookup, recordType, 0);
   }
 
+  /**
+   * Create a map populated with the keys and valus of an existing map.
+   *
+   * @param lookup a lookup that can access to the record
+   * @param recordType a record class
+   * @param map an existing map
+   * @return a newly created map populated with the keys and valus of an existing map.
+   * @throws NullPointerException if one of the parameter is null
+   * @throws IllegalArgumentException if the recordType is not a record
+   * @throws IllegalStateException if the lookup can not access to the record class
+   * @param <T> the type of the map value
+   */
   public static <T extends Record> StructOfArrayMap<T> of(Lookup lookup, Class<T> recordType, Map<? extends Integer, ? extends T> map) {
     Objects.requireNonNull(lookup);
     Objects.requireNonNull(recordType);
@@ -325,6 +377,18 @@ public abstract class StructOfArrayMap<T> extends AbstractMap<Integer, T> {
     return soaMap;
   }
 
+  /**
+   * Create an empty map with an initial capacity.
+   *
+   * @param lookup a lookup that can access to the record
+   * @param recordType a record class
+   * @param capacity an initial capacity
+   * @return a fresh empty map
+   * @throws NullPointerException if one of the parameter is null
+   * @throws IllegalArgumentException if the recordType is not a record or the capacity is negative
+   * @throws IllegalStateException if the lookup can not access to the record class
+   * @param <T> the type of the map value
+   */
   public static <T extends Record> StructOfArrayMap<T> of(Lookup lookup, Class<T> recordType, int capacity) {
     Objects.requireNonNull(lookup);
     Objects.requireNonNull(recordType);

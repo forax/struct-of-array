@@ -45,6 +45,8 @@ import java.util.Objects;
  * with the capacity as last parameter.
  *
  * @param <E> the type of the item, must be a record
+ *
+ * @see StructOfArrayMap
  */
 public abstract class StructOfArrayList<E> extends AbstractList<E> {
   int size;

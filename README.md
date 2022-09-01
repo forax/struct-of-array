@@ -1,5 +1,6 @@
 # struct-of-array
-Two data structure with the API of an array of structs (AoS) and the internals of a struct of arrays (SoA)
+Two data structure with the API of an array of structs (AoS) and the internals of a
+[struct of arrays (SoA)](https://en.wikipedia.org/wiki/AoS_and_SoA)
 
 The API provides two data structure, a `StructOfArrayList` that have an API similar to an `ArrayList`
 of records but stores the components of the record in different arrays and a `StructOfArrayMap`
